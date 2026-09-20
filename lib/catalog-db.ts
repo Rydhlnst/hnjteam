@@ -7,6 +7,13 @@ import { hasDatabaseConfig } from "@/lib/env";
 import { defaultPublicSettings, type PublicSettings } from "@/lib/storefront";
 import { getPublicAssetUrl } from "@/lib/r2";
 
+export type DashboardProduct = Product & {
+  imageUrl?: string;
+  imageKey: string | null;
+  categoryId: string;
+  isActive: boolean;
+};
+
 type CatalogProduct = Product & { imageUrl?: string };
 type ProductRow = {
   id: string;
@@ -79,6 +86,65 @@ export async function getPublicCategories() {
   const rows = await getDb().select({ name: categoryTable.name, slug: categoryTable.slug, count: count(productTable.id) }).from(categoryTable).leftJoin(productTable, and(eq(productTable.categoryId, categoryTable.id), eq(productTable.isActive, true))).groupBy(categoryTable.id, categoryTable.name, categoryTable.slug).orderBy(asc(categoryTable.name));
   const total = rows.reduce((sum, category) => sum + Number(category.count), 0);
   return [{ name: "All products", slug: "all", count: total }, ...rows.map((category) => ({ ...category, count: Number(category.count) }))];
+}
+
+export type DashboardCategory = { id: string; name: string; slug: string };
+
+export async function getDashboardProducts(): Promise<DashboardProduct[]> {
+  if (!hasDatabaseConfig()) {
+    return (getFallbackProducts() as Product[]).map((p) => ({
+      ...p,
+      imageKey: null,
+      categoryId: "",
+      isActive: true,
+    }));
+  }
+
+  const rows = await getDb()
+    .select({
+      id: productTable.id,
+      name: productTable.name,
+      slug: productTable.slug,
+      description: productTable.description,
+      price: productTable.price,
+      imageKey: productTable.imageKey,
+      categoryId: productTable.categoryId,
+      category: categoryTable.slug,
+      categoryLabel: categoryTable.name,
+      featured: productTable.isFeatured,
+      isActive: productTable.isActive,
+    })
+    .from(productTable)
+    .leftJoin(categoryTable, eq(productTable.categoryId, categoryTable.id))
+    .orderBy(desc(productTable.createdAt));
+
+  return rows.map((row) => {
+    const fallback = getProduct(row.slug);
+    return {
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      description: row.description,
+      price: row.price,
+      imageKey: row.imageKey,
+      imageUrl: row.imageKey ? getPublicAssetUrl(row.imageKey) : undefined,
+      categoryId: row.categoryId,
+      category: row.category ?? "uncategorized",
+      categoryLabel: row.categoryLabel ?? "Uncategorized",
+      featured: row.featured,
+      isActive: row.isActive,
+      format: fallback?.format ?? "Digital download",
+      art: fallback?.art ?? { background: "#e7e8e2", foreground: "#263329", accent: "#d7ec67", label: "GOODS" },
+    };
+  });
+}
+
+export async function getDashboardCategories(): Promise<DashboardCategory[]> {
+  if (!hasDatabaseConfig()) return [];
+  return getDb()
+    .select({ id: categoryTable.id, name: categoryTable.name, slug: categoryTable.slug })
+    .from(categoryTable)
+    .orderBy(asc(categoryTable.name));
 }
 
 export async function getPublicSettings(): Promise<PublicSettings> {

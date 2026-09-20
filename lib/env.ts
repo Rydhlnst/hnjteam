@@ -28,6 +28,10 @@ export function hasDatabaseConfig() {
   return Boolean(process.env.DATABASE_URL);
 }
 
+export function isPreviewMode() {
+  return process.env.PREVIEW_MODE === "true";
+}
+
 export function requireDatabaseUrl() {
   const url = getServerEnv().DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL is not configured");

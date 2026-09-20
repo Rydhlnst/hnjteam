@@ -1,44 +1,186 @@
 import Link from "next/link";
-import { ArrowUpRight, LogOut, Settings2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { ArrowUpRight, LogOut, Megaphone, Package, Settings2 } from "lucide-react";
 
 import { signOutDashboard } from "@/app/dashboard/actions";
+import { CatalogSection } from "@/app/dashboard/_components/catalog-section";
 import { DashboardLoginForm } from "@/app/dashboard/_components/dashboard-login-form";
 import { StorefrontSettingsForm } from "@/app/dashboard/_components/storefront-settings-form";
-import { Button } from "@/components/ui/button";
 import { hasDashboardCredentials, isDashboardAuthenticated } from "@/lib/dashboard-auth";
-import { getPublicSettings } from "@/lib/catalog-db";
-import { hasDatabaseConfig } from "@/lib/env";
+import { getDashboardCategories, getDashboardProducts, getPublicSettings } from "@/lib/catalog-db";
+import { hasDatabaseConfig, isPreviewMode } from "@/lib/env";
 
-function DashboardShell({ children }: { children: React.ReactNode }) {
-  return <main className="min-h-screen bg-[#f7f7f5] px-4 py-5 text-[#171716] sm:px-6 sm:py-8"><div className="mx-auto max-w-5xl">{children}</div></main>;
-}
+const NAV = [
+  { tab: "storefront", label: "Storefront", icon: Megaphone },
+  { tab: "catalog", label: "Catalog", icon: Package },
+] as const;
+
+type Tab = (typeof NAV)[number]["tab"];
+
+const TAB_META: Record<Tab, { title: string; description: string }> = {
+  storefront: {
+    title: "Storefront",
+    description: "Edit promotion banners, collection heading, and WhatsApp settings.",
+  },
+  catalog: {
+    title: "Catalog",
+    description: "Products and categories available in your storefront.",
+  },
+};
 
 function SetupCard({ title, children }: { title: string; children: React.ReactNode }) {
-  return <DashboardShell><div className="mx-auto max-w-md rounded-3xl border border-[#deded9] bg-white p-6 shadow-sm sm:p-8"><div className="flex size-11 items-center justify-center rounded-2xl bg-[#171716] text-white"><Settings2 className="size-5" /></div><p className="mt-7 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#858580]">HnJ dashboard</p><h1 className="mt-2 text-3xl font-semibold tracking-[-0.07em]">{title}</h1>{children}</div></DashboardShell>;
+  return (
+    <div className="flex min-h-screen w-screen items-center justify-center bg-[#f7f7f5] px-4">
+      <div className="w-full max-w-md rounded-3xl border border-[#deded9] bg-white p-6 shadow-sm sm:p-8">
+        <div className="flex size-11 items-center justify-center rounded-2xl bg-[#171716] text-white">
+          <Settings2 className="size-5" />
+        </div>
+        <p className="mt-7 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#858580]">HnJ dashboard</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-[-0.07em]">{title}</h1>
+        {children}
+      </div>
+    </div>
+  );
 }
 
-export default async function DashboardPage() {
-  if (!hasDatabaseConfig()) {
-    return <SetupCard title="Connect your database"><p className="mt-4 text-sm leading-6 text-[#6c6c68]">Add DATABASE_URL, run the database migration, then return here to edit promotion settings.</p></SetupCard>;
+function Sidebar({ activeTab, preview }: { activeTab: Tab; preview: boolean }) {
+  return (
+    <aside className="flex w-56 shrink-0 flex-col border-r border-[#232320] bg-[#171716] text-white">
+      <div className="px-5 pb-4 pt-6">
+        <p className="text-lg font-semibold tracking-[-0.05em]">HnJ.</p>
+        <p className="mt-0.5 text-[11px] font-medium text-[#6c6c68]">Dashboard</p>
+      </div>
+
+      <nav className="flex-1 space-y-0.5 px-3 pt-2">
+        {NAV.map(({ tab, label, icon: Icon }) => (
+          <Link
+            key={tab}
+            href={`/dashboard?tab=${tab}`}
+            className={cn(
+              "flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+              activeTab === tab
+                ? "bg-white/10 text-white"
+                : "text-[#858580] hover:bg-white/5 hover:text-[#c8c8c4]"
+            )}
+          >
+            <Icon className="size-4 shrink-0" />
+            {label}
+          </Link>
+        ))}
+      </nav>
+
+      <div className="space-y-0.5 border-t border-[#232320] p-3">
+        <Link
+          href="/"
+          target="_blank"
+          className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-[#858580] transition-colors hover:bg-white/5 hover:text-[#c8c8c4]"
+        >
+          <ArrowUpRight className="size-4 shrink-0" />
+          View store
+        </Link>
+        {!preview && (
+          <form action={signOutDashboard}>
+            <button
+              type="submit"
+              className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-[#858580] transition-colors hover:bg-white/5 hover:text-[#c8c8c4]"
+            >
+              <LogOut className="size-4 shrink-0" />
+              Sign out
+            </button>
+          </form>
+        )}
+      </div>
+    </aside>
+  );
+}
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const preview = isPreviewMode();
+
+  if (!preview && !hasDatabaseConfig()) {
+    return (
+      <SetupCard title="Connect your database">
+        <p className="mt-4 text-sm leading-6 text-[#6c6c68]">
+          Add DATABASE_URL, run the database migration, then return here to edit promotion settings.
+        </p>
+      </SetupCard>
+    );
   }
 
-  if (!hasDashboardCredentials()) {
-    return <SetupCard title="Secure the dashboard"><p className="mt-4 text-sm leading-6 text-[#6c6c68]">Add DASHBOARD_PASSWORD and DASHBOARD_SESSION_SECRET to your environment before opening the editor.</p></SetupCard>;
+  if (!preview && !hasDashboardCredentials()) {
+    return (
+      <SetupCard title="Secure the dashboard">
+        <p className="mt-4 text-sm leading-6 text-[#6c6c68]">
+          Add DASHBOARD_PASSWORD and DASHBOARD_SESSION_SECRET to your environment before opening the editor.
+        </p>
+      </SetupCard>
+    );
   }
 
-  if (!(await isDashboardAuthenticated())) {
-    return <SetupCard title="Sign in"><p className="mt-4 text-sm leading-6 text-[#6c6c68]">Use the dashboard password configured for this store.</p><DashboardLoginForm /></SetupCard>;
+  if (!preview && !(await isDashboardAuthenticated())) {
+    return (
+      <SetupCard title="Sign in">
+        <p className="mt-4 text-sm leading-6 text-[#6c6c68]">
+          Use the dashboard password configured for this store.
+        </p>
+        <DashboardLoginForm />
+      </SetupCard>
+    );
   }
 
-  const settings = await getPublicSettings();
-  return <DashboardShell>
-    <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#e1e1dc] pb-5">
-      <div><p className="text-sm font-semibold tracking-[-0.04em]">HnJ.</p><h1 className="mt-4 text-3xl font-semibold tracking-[-0.07em] sm:text-4xl">Storefront settings</h1><p className="mt-2 max-w-xl text-sm leading-6 text-[#6c6c68]">Edit three sales banners, collection copy, and the WhatsApp order destination. Saving updates the public storefront.</p></div>
-      <div className="flex items-center gap-2"><Button asChild variant="outline" size="sm"><Link href="/" target="_blank">View store <ArrowUpRight /></Link></Button><form action={signOutDashboard}><Button type="submit" variant="ghost" size="sm"><LogOut />Sign out</Button></form></div>
-    </header>
-    <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
-      <div className="rounded-3xl border border-[#deded9] bg-white p-5 shadow-sm sm:p-7"><StorefrontSettingsForm initialSettings={settings} /></div>
-      <aside className="h-fit rounded-3xl border border-[#deded9] bg-[#efefec] p-5 lg:sticky lg:top-6"><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#858580]">What changes</p><ul className="mt-4 space-y-3 text-sm leading-6 text-[#5f5f5b]"><li>Three switchable promotion banners and their CTAs.</li><li>Featured collection heading.</li><li>Every WhatsApp product and cart checkout link.</li></ul></aside>
+  const { tab } = await searchParams;
+  const activeTab: Tab = NAV.some((n) => n.tab === tab) ? (tab as Tab) : "storefront";
+
+  const [settings, products, categories] = await Promise.all([
+    getPublicSettings(),
+    getDashboardProducts(),
+    getDashboardCategories(),
+  ]);
+
+  const { title, description } = TAB_META[activeTab];
+
+  return (
+    <div className="flex h-screen w-screen overflow-hidden bg-[#f7f7f5] text-[#171716]">
+      <Sidebar activeTab={activeTab} preview={preview} />
+
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        {preview && (
+          <div className="shrink-0 border-b border-amber-200 bg-amber-50 px-6 py-2.5 text-sm text-amber-800">
+            Preview mode — changes cannot be saved without a database connection.
+          </div>
+        )}
+
+        <header className="shrink-0 border-b border-[#e1e1dc] bg-white px-6 py-4">
+          <h1 className="text-xl font-semibold tracking-[-0.05em]">{title}</h1>
+          <p className="mt-0.5 text-sm text-[#6c6c68]">{description}</p>
+        </header>
+
+        <main className="flex-1 overflow-y-auto p-6">
+          {activeTab === "storefront" && (
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+              <div className="rounded-3xl border border-[#deded9] bg-white p-5 shadow-sm sm:p-7">
+                <StorefrontSettingsForm initialSettings={settings} />
+              </div>
+              <aside className="h-fit rounded-3xl border border-[#deded9] bg-[#efefec] p-5 lg:sticky lg:top-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#858580]">What changes</p>
+                <ul className="mt-4 space-y-3 text-sm leading-6 text-[#5f5f5b]">
+                  <li>Three switchable promotion banners and their CTAs.</li>
+                  <li>Featured collection heading.</li>
+                  <li>Every WhatsApp product and cart checkout link.</li>
+                </ul>
+              </aside>
+            </div>
+          )}
+
+          {activeTab === "catalog" && (
+            <CatalogSection products={products} categories={categories} />
+          )}
+        </main>
+      </div>
     </div>
-  </DashboardShell>;
+  );
 }

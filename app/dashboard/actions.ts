@@ -9,7 +9,7 @@ import type { DashboardFormState } from "@/app/dashboard/_components/form-state"
 import { settings } from "@/db/schema";
 import { clearDashboardSession, createDashboardSession, requireDashboardAuthentication } from "@/lib/dashboard-auth";
 import { getDb } from "@/lib/db";
-import { hasDatabaseConfig } from "@/lib/env";
+import { hasDatabaseConfig, isPreviewMode } from "@/lib/env";
 
 const promotionSchema = {
   heroEyebrow: z.string().trim().min(2).max(80),
@@ -53,6 +53,8 @@ export async function signOutDashboard() {
 }
 
 export async function updateStorefrontSettings(_: DashboardFormState, formData: FormData): Promise<DashboardFormState> {
+  if (isPreviewMode()) return { status: "error", message: "Preview mode — connect a database to save changes." };
+
   try {
     await requireDashboardAuthentication();
   } catch {
