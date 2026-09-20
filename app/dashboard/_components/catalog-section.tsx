@@ -50,7 +50,7 @@ export function CatalogSection({ products: initialProducts, categories: initialC
 
   const handleDeleteCategory = (id: string, name: string) => {
     if (!confirm(`Delete category "${name}"? This will fail if products still use it.`)) return;
-    startTransition(() => deleteCategory(id));
+    startTransition(async () => { await deleteCategory(id); });
   };
 
   return (
