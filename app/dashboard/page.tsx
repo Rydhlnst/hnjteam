@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { ArrowUpRight, LogOut, Megaphone, Package, Settings2 } from "lucide-react";
+import { ArrowUpRight, LogOut, Megaphone, Menu, Package, Settings2 } from "lucide-react";
 
 import { signOutDashboard } from "@/app/dashboard/actions";
 import { CatalogSection } from "@/app/dashboard/_components/catalog-section";
 import { DashboardLoginForm } from "@/app/dashboard/_components/dashboard-login-form";
 import { StorefrontSettingsForm } from "@/app/dashboard/_components/storefront-settings-form";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { hasDashboardCredentials, isDashboardAuthenticated } from "@/lib/dashboard-auth";
 import { getDashboardCategories, getDashboardProducts, getPublicSettings } from "@/lib/catalog-db";
 import { hasDatabaseConfig, isPreviewMode } from "@/lib/env";
@@ -43,9 +44,9 @@ function SetupCard({ title, children }: { title: string; children: React.ReactNo
   );
 }
 
-function Sidebar({ activeTab, preview }: { activeTab: Tab; preview: boolean }) {
+function SidebarContent({ activeTab, preview }: { activeTab: Tab; preview: boolean }) {
   return (
-    <aside className="flex w-56 shrink-0 flex-col border-r border-[#232320] bg-[#171716] text-white">
+    <>
       <div className="px-5 pb-4 pt-6">
         <p className="text-lg font-semibold tracking-[-0.05em]">HnJ.</p>
         <p className="mt-0.5 text-[11px] font-medium text-[#6c6c68]">Dashboard</p>
@@ -90,7 +91,30 @@ function Sidebar({ activeTab, preview }: { activeTab: Tab; preview: boolean }) {
           </form>
         )}
       </div>
+    </>
+  );
+}
+
+function Sidebar({ activeTab, preview }: { activeTab: Tab; preview: boolean }) {
+  return (
+    <aside className="hidden md:flex w-56 shrink-0 flex-col border-r border-[#232320] bg-[#171716] text-white">
+      <SidebarContent activeTab={activeTab} preview={preview} />
     </aside>
+  );
+}
+
+function MobileSidebar({ activeTab, preview }: { activeTab: Tab; preview: boolean }) {
+  return (
+    <Sheet>
+      <SheetTrigger asChild>
+        <button className="flex size-9 items-center justify-center rounded-xl text-[#858580] transition hover:bg-[#f0f0ec] hover:text-[#171716] md:hidden">
+          <Menu className="size-5" />
+        </button>
+      </SheetTrigger>
+      <SheetContent side="left" className="w-56 border-r border-[#232320] bg-[#171716] p-0 text-white [&>button]:text-[#858580] [&>button]:hover:text-white">
+        <SidebarContent activeTab={activeTab} preview={preview} />
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -154,9 +178,14 @@ export default async function DashboardPage({
           </div>
         )}
 
-        <header className="shrink-0 border-b border-[#e1e1dc] bg-white px-6 py-4">
-          <h1 className="text-xl font-semibold tracking-[-0.05em]">{title}</h1>
-          <p className="mt-0.5 text-sm text-[#6c6c68]">{description}</p>
+        <header className="shrink-0 border-b border-[#e1e1dc] bg-white px-4 py-4 sm:px-6">
+          <div className="flex items-center gap-3">
+            <MobileSidebar activeTab={activeTab} preview={preview} />
+            <div>
+              <h1 className="text-xl font-semibold tracking-[-0.05em]">{title}</h1>
+              <p className="mt-0.5 text-sm text-[#6c6c68]">{description}</p>
+            </div>
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto p-6">
