@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, MoveUpRight, Sparkles } from "lucide-react";
+import { Menu, MoveUpRight } from "lucide-react";
 import { useState } from "react";
 
 import { CartButton } from "@/components/site/cart-button";
@@ -37,7 +37,7 @@ export function SiteNavbar() {
             <nav className="mt-9 border-t border-[#deded9]" aria-label="Mobile navigation">
               {links.map((link) => <SheetClose asChild key={link.href}><Link href={link.href} className="flex min-h-16 items-center justify-between border-b border-[#deded9] text-base font-semibold tracking-[-0.03em] text-[#1d1d1b] transition hover:pl-1"><span>{link.label}</span><MoveUpRight className="size-4 text-[#999995]" /></Link></SheetClose>)}
             </nav>
-            <div className="mt-auto rounded-2xl bg-[#171716] p-4 text-white"><div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55"><Sparkles className="size-3.5" />Need a quick answer?</div><p className="mt-3 text-sm leading-5 text-white/78">Ask HnJ before you choose a product.</p><WhatsAppButton label="Talk to HnJ" variant="secondary" size="lg" className="mt-4 h-11 w-full rounded-xl bg-white text-[#171716] hover:bg-[#eaeae7]" /></div>
+            <div className="mt-auto rounded-2xl bg-[#171716] p-4 text-white"><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">Need a quick answer?</p><p className="mt-3 text-sm leading-5 text-white/78">Ask HnJ before you choose a product.</p><WhatsAppButton label="Talk to HnJ" variant="secondary" size="lg" className="mt-4 h-11 w-full rounded-xl bg-white text-[#171716] hover:bg-[#eaeae7]" /></div>
           </div>
         </SheetContent>
       </Sheet>
