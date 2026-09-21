@@ -8,9 +8,11 @@ import { CatalogSection } from "@/app/dashboard/_components/catalog-section";
 import { DashboardLoginForm } from "@/app/dashboard/_components/dashboard-login-form";
 import { SetupAdminForm } from "@/app/dashboard/_components/setup-admin-form";
 import { StorefrontSettingsForm } from "@/app/dashboard/_components/storefront-settings-form";
+import { BrandingSection } from "@/app/dashboard/_components/branding-section";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { hasAdminUser, isDashboardAuthenticated } from "@/lib/dashboard-auth";
 import { getDashboardCategories, getDashboardProducts, getDashboardUnitTypes, getPublicSettings } from "@/lib/catalog-db";
+import { getPublicAssetUrl } from "@/lib/r2";
 import { hasDatabaseConfig, isPreviewMode } from "@/lib/env";
 
 const NAV = [
@@ -200,12 +202,20 @@ export default async function DashboardPage({
         <main className="flex-1 overflow-y-auto p-6">
           {activeTab === "storefront" && (
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-              <div className="rounded-3xl border border-[#deded9] bg-white p-5 shadow-sm sm:p-7">
-                <StorefrontSettingsForm initialSettings={settings} />
+              <div className="space-y-6">
+                <BrandingSection
+                  initialSettings={settings}
+                  logoPublicUrl={settings.logoKey ? getPublicAssetUrl(settings.logoKey) : undefined}
+                  faviconPublicUrl={settings.faviconKey ? getPublicAssetUrl(settings.faviconKey) : undefined}
+                />
+                <div className="rounded-3xl border border-[#deded9] bg-white p-5 shadow-sm sm:p-7">
+                  <StorefrontSettingsForm initialSettings={settings} />
+                </div>
               </div>
               <aside className="h-fit rounded-3xl border border-[#deded9] bg-[#efefec] p-5 lg:sticky lg:top-0">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#858580]">What changes</p>
                 <ul className="mt-4 space-y-3 text-sm leading-6 text-[#5f5f5b]">
+                  <li>Site name, logo, and favicon shown across the storefront.</li>
                   <li>Three switchable promotion banners and their CTAs.</li>
                   <li>Featured collection heading.</li>
                   <li>Every WhatsApp product and cart checkout link.</li>

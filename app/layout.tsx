@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { CartProvider } from "@/components/site/cart-provider";
 import { StorefrontOverlays } from "@/components/site/storefront-overlays";
 import { getPublicSettings } from "@/lib/catalog-db";
+import { getPublicAssetUrl } from "@/lib/r2";
 
 import "./globals.css";
 
@@ -17,19 +18,22 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
-  title: {
-    default: "HnJ — Simple digital products",
-    template: "%s — HnJ",
-  },
-  description: "Simple digital products for work, business, and everyday making.",
-  openGraph: {
-    title: "HnJ — Simple digital products",
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getPublicSettings();
+  const name = settings.siteName;
+  const faviconUrl = settings.faviconKey ? getPublicAssetUrl(settings.faviconKey) : undefined;
+  return {
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+    title: { default: `${name} — Simple digital products`, template: `%s — ${name}` },
     description: "Simple digital products for work, business, and everyday making.",
-    type: "website",
-  },
-};
+    openGraph: {
+      title: `${name} — Simple digital products`,
+      description: "Simple digital products for work, business, and everyday making.",
+      type: "website",
+    },
+    ...(faviconUrl ? { icons: { icon: faviconUrl } } : {}),
+  };
+}
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const settings = await getPublicSettings();

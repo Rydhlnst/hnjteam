@@ -12,6 +12,7 @@ import { getAuth } from "@/lib/auth";
 import { requireDashboardAuthentication } from "@/lib/dashboard-auth";
 import { getDb } from "@/lib/db";
 import { hasDatabaseConfig, isPreviewMode } from "@/lib/env";
+import { deleteProductImage, uploadBrandAsset } from "@/lib/r2";
 
 const promotionSchema = {
   heroEyebrow: z.string().trim().min(2).max(80),
@@ -70,4 +71,40 @@ export async function updateStorefrontSettings(_: DashboardFormState, formData: 
   revalidatePath("/", "layout");
   revalidatePath("/dashboard");
   return { status: "success", message: "Storefront settings saved." };
+}
+
+export async function updateBrandingAssets(_: DashboardFormState, formData: FormData): Promise<DashboardFormState> {
+  if (isPreviewMode()) return { status: "error", message: "Preview mode — connect a database to save changes." };
+  try { await requireDashboardAuthentication(); } catch { return { status: "error", message: "Session expired. Please sign in again." }; }
+  if (!hasDatabaseConfig()) return { status: "error", message: "DATABASE_URL is required." };
+
+  const siteName = z.string().trim().min(1).max(60).safeParse(formData.get("siteName"));
+  if (!siteName.success) return { status: "error", message: "Site name must be 1–60 characters." };
+
+  const db = getDb();
+  const [current] = await db.select({ logoKey: settings.logoKey, faviconKey: settings.faviconKey }).from(settings).where(eq(settings.id, 1)).limit(1);
+
+  async function handleAsset(fieldName: string, existingKey: string | null | undefined, prefix: string): Promise<string | null | undefined> {
+    const remove = formData.get(`_remove_${fieldName}`) === "true";
+    const file = formData.get(fieldName);
+    const hasNew = file instanceof File && file.size > 0;
+    if ((remove || hasNew) && existingKey) await deleteProductImage(existingKey).catch(() => {});
+    if (hasNew && !remove) {
+      const buffer = Buffer.from(await (file as File).arrayBuffer());
+      const key = `${prefix}/${crypto.randomUUID()}.webp`;
+      await uploadBrandAsset(buffer, key, "image/webp");
+      return key;
+    }
+    return remove ? null : existingKey;
+  }
+
+  const logoKey = await handleAsset("logo", current?.logoKey, "brand/logo");
+  const faviconKey = await handleAsset("favicon", current?.faviconKey, "brand/favicon");
+
+  await db.insert(settings).values({ id: 1, siteName: siteName.data, logoKey: logoKey ?? null, faviconKey: faviconKey ?? null, whatsappNumber: "", whatsappMessageTemplate: "" })
+    .onConflictDoUpdate({ target: settings.id, set: { siteName: siteName.data, logoKey: logoKey ?? null, faviconKey: faviconKey ?? null, updatedAt: new Date() }, where: eq(settings.id, 1) });
+
+  revalidatePath("/", "layout");
+  revalidatePath("/dashboard");
+  return { status: "success", message: "Branding saved." };
 }

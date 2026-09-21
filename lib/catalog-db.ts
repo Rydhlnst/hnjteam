@@ -222,6 +222,9 @@ export async function getPublicSettings(): Promise<PublicSettings> {
     promoThreeDescription: settingsTable.promoThreeDescription,
     promoThreeCtaLabel: settingsTable.promoThreeCtaLabel,
     brandColor: settingsTable.brandColor,
+    siteName: settingsTable.siteName,
+    logoKey: settingsTable.logoKey,
+    faviconKey: settingsTable.faviconKey,
   }).from(settingsTable).where(eq(settingsTable.id, 1)).limit(1);
   return row ?? defaultPublicSettings;
 }

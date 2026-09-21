@@ -49,6 +49,9 @@ export const settings = pgTable("settings", {
   promoThreeDescription: text("promo_three_description").notNull().default("We will help you choose the right product."),
   promoThreeCtaLabel: varchar("promo_three_cta_label", { length: 40 }).notNull().default("Talk to HnJ"),
   brandColor: varchar("brand_color", { length: 9 }).notNull().default("#171716"),
+  siteName: varchar("site_name", { length: 60 }).notNull().default("HnJ"),
+  logoKey: text("logo_key"),
+  faviconKey: text("favicon_key"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

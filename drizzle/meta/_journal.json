@@ -29,6 +29,13 @@
       "when": 1789985497064,
       "tag": "0003_living_squirrel_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789992203038,
+      "tag": "0004_jazzy_cable",
+      "breakpoints": true
     }
   ]
 }

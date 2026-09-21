@@ -16,6 +16,9 @@ export type StorefrontSettings = {
   collectionEyebrow: string;
   collectionTitle: string;
   brandColor: string;
+  siteName: string;
+  logoKey: string | null;
+  faviconKey: string | null;
 };
 
 export type PublicSettings = WhatsAppSettings & StorefrontSettings;
@@ -36,6 +39,9 @@ export const defaultStorefrontSettings: StorefrontSettings = {
   collectionEyebrow: "Featured collection",
   collectionTitle: "Shop HnJ",
   brandColor: "#171716",
+  siteName: "HnJ",
+  logoKey: null,
+  faviconKey: null,
 };
 
 export const defaultPublicSettings: PublicSettings = {

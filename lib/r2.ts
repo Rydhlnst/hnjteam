@@ -48,3 +48,21 @@ export async function deleteProductImage(key: string) {
   const config = requireR2Config();
   await getR2Client().send(new DeleteObjectCommand({ Bucket: config.bucketName, Key: key }));
 }
+
+export async function uploadBrandAsset(input: Buffer, key: string, contentType: "image/webp" | "image/png" | "image/x-icon") {
+  const config = requireR2Config();
+  let body: Buffer;
+  if (contentType === "image/x-icon") {
+    body = input;
+  } else {
+    body = await sharp(input).rotate().resize({ width: 512, height: 512, fit: "inside", withoutEnlargement: true }).webp({ quality: 90 }).toBuffer();
+  }
+  await getR2Client().send(new PutObjectCommand({
+    Bucket: config.bucketName,
+    Key: key,
+    Body: body,
+    ContentType: contentType === "image/x-icon" ? "image/x-icon" : "image/webp",
+    CacheControl: "public, max-age=31536000, immutable",
+  }));
+  return { key, url: getPublicAssetUrl(key) };
+}
