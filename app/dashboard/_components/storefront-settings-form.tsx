@@ -146,8 +146,10 @@ export function StorefrontSettingsForm({ initialSettings }: StorefrontSettingsFo
         <form.Field name="whatsappMessageTemplate">{(field) => <div className="space-y-2"><FieldLabel htmlFor={field.name} hint="Use {product_name} and {product_price} to include product details.">Product chat message</FieldLabel><TextArea id={field.name} value={field.state.value} onChange={field.handleChange} rows={5} /></div>}</form.Field>
       </section>
 
-      <div className="sticky bottom-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#deded9] bg-white/95 p-3 shadow-lg backdrop-blur">
-        <p aria-live="polite" className={state.status === "error" ? "text-sm text-red-600" : "text-sm text-[#6c6c68]"}>{state.status === "success" ? <span className="inline-flex items-center gap-1.5 text-[#3d5a40]"><Check className="size-4" />{state.message}</span> : state.message}</p>
+      <div className="sticky bottom-4 ml-auto flex w-fit items-center gap-3 rounded-2xl border border-[#deded9] bg-white/95 p-3 shadow-lg backdrop-blur">
+        {state.message ? (
+          <p aria-live="polite" className={state.status === "error" ? "text-sm text-red-600" : "text-sm text-[#6c6c68]"}>{state.status === "success" ? <span className="inline-flex items-center gap-1.5 text-[#3d5a40]"><Check className="size-4" />{state.message}</span> : state.message}</p>
+        ) : null}
         <Button type="submit" size="lg" disabled={pending}><Save />{pending ? "Saving…" : "Save changes"}</Button>
       </div>
     </form>

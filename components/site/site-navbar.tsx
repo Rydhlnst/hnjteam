@@ -3,10 +3,22 @@
 import Link from "next/link";
 import { Menu, MoveUpRight } from "lucide-react";
 import { useState } from "react";
+import { motion } from "framer-motion";
 
 import { CartButton } from "@/components/site/cart-button";
 import { WhatsAppButton } from "@/components/site/whatsapp-button";
 import { Sheet, SheetClose, SheetContent } from "@/components/ui/sheet";
+
+const ease = [0.22, 1, 0.36, 1] as const;
+
+const navStagger = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.06, delayChildren: 0.05 } },
+};
+const navItem = {
+  hidden: { opacity: 0, y: -6 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease } },
+};
 
 const links = [
   { label: "Shop all", href: "/products" },
@@ -22,14 +34,19 @@ export function SiteNavbar() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-[#deded9]/90 bg-[#f7f7f5]/90 backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link href="/" aria-label="HnJ home"><BrandMark /></Link>
+      <motion.div
+        className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-4 sm:px-6 lg:px-8"
+        variants={navStagger}
+        initial="hidden"
+        animate="show"
+      >
+        <motion.div variants={navItem}><Link href="/" aria-label="HnJ home"><BrandMark /></Link></motion.div>
         <nav className="hidden items-center gap-7 lg:flex" aria-label="Primary navigation">
-          {links.map((link) => <Link key={link.href} href={link.href} className="text-xs font-medium uppercase tracking-[0.12em] text-[#737370] transition hover:text-[#1d1d1b]">{link.label}</Link>)}
+          {links.map((link) => <motion.div key={link.href} variants={navItem}><Link href={link.href} className="text-xs font-medium uppercase tracking-[0.12em] text-[#737370] transition hover:text-[#1d1d1b]">{link.label}</Link></motion.div>)}
         </nav>
-        <div className="hidden items-center gap-2 lg:flex"><CartButton /><WhatsAppButton label="Ask before ordering" size="sm" className="rounded-full" /></div>
-        <div className="flex items-center gap-2 lg:hidden"><CartButton /><button className="inline-flex size-10 items-center justify-center rounded-xl border border-[#d7d7d2] bg-white text-[#1d1d1b] shadow-sm transition hover:bg-[#efefec] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#171716] focus-visible:ring-offset-2" onClick={() => setOpen(true)} aria-label="Open menu"><Menu className="size-[18px]" /></button></div>
-      </div>
+        <motion.div variants={navItem} className="hidden items-center gap-2 lg:flex"><CartButton /><WhatsAppButton label="Ask before ordering" size="sm" className="rounded-full" /></motion.div>
+        <motion.div variants={navItem} className="flex items-center gap-2 lg:hidden"><CartButton /><button className="inline-flex size-10 items-center justify-center rounded-xl border border-[#d7d7d2] bg-white text-[#1d1d1b] shadow-sm transition hover:bg-[#efefec] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#171716] focus-visible:ring-offset-2" onClick={() => setOpen(true)} aria-label="Open menu"><Menu className="size-[18px]" /></button></motion.div>
+      </motion.div>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent className="w-[min(90vw,360px)] border-l border-[#deded9] bg-[#f7f7f5] p-0 sm:max-w-md">
           <div className="flex h-full flex-col px-5 pb-5 pt-5 sm:px-6 sm:pt-6">

@@ -2,6 +2,17 @@
 
 import { useState } from "react";
 import { Check, Download, FileText, MessageCircle } from "lucide-react";
+import { motion } from "framer-motion";
+
+const ease = [0.22, 1, 0.36, 1] as const;
+const stagger = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.07, delayChildren: 0.1 } },
+};
+const item = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.45, ease } },
+};
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -30,42 +41,46 @@ export function ProductDetailCard({ product, settings }: { product: Product; set
           <div className="mt-3 flex items-center justify-between px-1 text-xs text-[#858580]"><span>Product preview</span><span>{product.format}</span></div>
         </div>
         <CardContent className="p-5 sm:p-8 lg:p-10">
-          <Badge className="border-[#e1e1dc] bg-[#f7f7f5] text-[#686864]">{product.categoryLabel}</Badge>
-          <h1 className="mt-5 max-w-xl text-[clamp(2.5rem,5vw,4.5rem)] font-semibold leading-[0.92] tracking-[-0.085em] text-[#171716]">{product.name}</h1>
-          <p className="mt-5 max-w-xl text-sm leading-6 text-[#6c6c68] sm:text-base sm:leading-7">{product.description}</p>
+          <motion.div variants={stagger} initial="hidden" animate="show" className="flex flex-col">
+            <motion.div variants={item}><Badge className="border-[#e1e1dc] bg-[#f7f7f5] text-[#686864]">{product.categoryLabel}</Badge></motion.div>
+            <motion.h1 variants={item} className="mt-5 max-w-xl text-[clamp(2.5rem,5vw,4.5rem)] font-semibold leading-[0.92] tracking-[-0.085em] text-[#171716]">{product.name}</motion.h1>
+            <motion.p variants={item} className="mt-5 max-w-xl text-sm leading-6 text-[#6c6c68] sm:text-base sm:leading-7">{product.description}</motion.p>
 
-          {activeVariants.length > 0 && (
-            <div className="mt-7">
-              <p className="text-xs font-medium text-[#858580] uppercase tracking-[0.12em]">Choose a package</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {activeVariants.map((v) => (
-                  <button
-                    key={v.id}
-                    type="button"
-                    onClick={() => setSelectedVariant(v)}
-                    className={[
-                      "rounded-xl border px-4 py-2 text-sm font-medium transition",
-                      selectedVariant?.id === v.id
-                        ? "border-[#171716] bg-[#171716] text-white"
-                        : "border-[#deded9] bg-white text-[#31312f] hover:border-[#171716]",
-                    ].join(" ")}
-                  >
-                    {v.quantity} {v.unitTypeName}
-                    <span className="ml-2 text-xs opacity-70">{formatPrice(v.price)}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+            {activeVariants.length > 0 && (
+              <motion.div variants={item} className="mt-7">
+                <p className="text-xs font-medium text-[#858580] uppercase tracking-[0.12em]">Choose a package</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {activeVariants.map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => setSelectedVariant(v)}
+                      className={[
+                        "rounded-xl border px-4 py-2 text-sm font-medium transition",
+                        selectedVariant?.id === v.id
+                          ? "border-[#171716] bg-[#171716] text-white"
+                          : "border-[#deded9] bg-white text-[#31312f] hover:border-[#171716]",
+                      ].join(" ")}
+                    >
+                      {v.quantity} {v.unitTypeName}
+                      <span className="ml-2 text-xs opacity-70">{formatPrice(v.price)}</span>
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
 
-          <div className="mt-7 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <span className="text-2xl font-semibold tracking-[-0.04em] text-[#171716]">{formatPrice(displayPrice)}</span>
-            <span className="text-sm text-[#858580]">{selectedVariant ? `${selectedVariant.quantity} ${selectedVariant.unitTypeName}` : "one-time purchase"}</span>
-          </div>
-          <WhatsAppButton product={product} settings={settings} variant_={selectedVariant} label="Order via WhatsApp" size="lg" className="mt-7 w-full" />
-          <p className="mt-3 text-center text-xs leading-5 text-[#858580]">No checkout here. We&apos;ll confirm the details with you first.</p>
-          <Separator className="my-7" />
-          <div className="grid gap-5 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">{highlights.map(({ label, value, icon: Icon }) => <div key={label} className="flex items-start gap-3"><span className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#f1f1ee] text-[#5f5f5b]"><Icon className="size-4" /></span><div><p className="text-xs text-[#999995]">{label}</p><p className="mt-1 text-sm font-medium leading-5 text-[#171716]">{value}</p></div></div>)}</div>
+            <motion.div variants={item} className="mt-7 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <span className="text-2xl font-semibold tracking-[-0.04em] text-[#171716]">{formatPrice(displayPrice)}</span>
+              <span className="text-sm text-[#858580]">{selectedVariant ? `${selectedVariant.quantity} ${selectedVariant.unitTypeName}` : "one-time purchase"}</span>
+            </motion.div>
+            <motion.div variants={item}>
+              <WhatsAppButton product={product} settings={settings} variant_={selectedVariant} label="Order via WhatsApp" size="lg" className="mt-7 w-full" />
+              <p className="mt-3 text-center text-xs leading-5 text-[#858580]">No checkout here. We&apos;ll confirm the details with you first.</p>
+            </motion.div>
+            <motion.div variants={item}><Separator className="my-7" /></motion.div>
+            <motion.div variants={item} className="grid gap-5 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">{highlights.map(({ label, value, icon: Icon }) => <div key={label} className="flex items-start gap-3"><span className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#f1f1ee] text-[#5f5f5b]"><Icon className="size-4" /></span><div><p className="text-xs text-[#999995]">{label}</p><p className="mt-1 text-sm font-medium leading-5 text-[#171716]">{value}</p></div></div>)}</motion.div>
+          </motion.div>
         </CardContent>
       </div>
       <div className="border-t border-[#e1e1dc] bg-[#fafaf8] px-5 py-5 sm:px-8 lg:px-10"><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#999995]">What you can expect</p><div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{["Ready to customize", `${product.format} files`, "Flexible for your workflow", "Friendly human support"].map((item) => <div key={item} className="flex items-center gap-2 text-sm text-[#656561]"><span className="inline-flex size-5 items-center justify-center rounded-full bg-[#e9e9e5] text-[#5f5f5b]"><Check className="size-3.5" /></span>{item}</div>)}</div></div>
