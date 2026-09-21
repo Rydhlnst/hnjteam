@@ -2,11 +2,14 @@
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
-import type { Product } from "@/lib/catalog";
+import type { Product, ProductVariant } from "@/lib/catalog";
 import type { WhatsAppSettings } from "@/lib/whatsapp";
 
-export type CartItem = Pick<Product, "id" | "name" | "slug" | "price" | "categoryLabel"> & {
+export type CartItem = Pick<Product, "id" | "name" | "slug" | "categoryLabel"> & {
+  price: number;
   quantity: number;
+  variantId?: string;
+  variantLabel?: string;
 };
 
 type CartContextValue = {
@@ -15,7 +18,7 @@ type CartContextValue = {
   subtotal: number;
   isOpen: boolean;
   settings: WhatsAppSettings;
-  addItem: (product: Product) => void;
+  addItem: (product: Product, variant?: ProductVariant) => void;
   removeItem: (id: string) => void;
   setQuantity: (id: string, quantity: number) => void;
   setOpen: (open: boolean) => void;
@@ -54,11 +57,14 @@ export function CartProvider({ children, settings }: { children: ReactNode; sett
   }, [hasLoaded, items]);
 
   const value = useMemo<CartContextValue>(() => {
-    const addItem = (product: Product) => {
+    const addItem = (product: Product, variant?: ProductVariant) => {
+      const cartId = variant ? `${product.id}:${variant.id}` : product.id;
+      const price = variant ? variant.price : product.price;
+      const variantLabel = variant ? `${variant.quantity} ${variant.unitTypeName}` : undefined;
       setItems((current) => {
-        const existing = current.find((item) => item.id === product.id);
-        if (existing) return current.map((item) => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
-        return [...current, { id: product.id, name: product.name, slug: product.slug, price: product.price, categoryLabel: product.categoryLabel, quantity: 1 }];
+        const existing = current.find((item) => item.id === cartId);
+        if (existing) return current.map((item) => item.id === cartId ? { ...item, quantity: item.quantity + 1 } : item);
+        return [...current, { id: cartId, name: product.name, slug: product.slug, price, categoryLabel: product.categoryLabel, quantity: 1, variantId: variant?.id, variantLabel }];
       });
     };
     const removeItem = (id: string) => setItems((current) => current.filter((item) => item.id !== id));
@@ -77,4 +83,3 @@ export function useCart() {
   if (!context) throw new Error("useCart must be used within CartProvider");
   return context;
 }
-

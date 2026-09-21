@@ -7,6 +7,9 @@ import { ProductCardActions } from "@/components/site/product-card-actions";
 import { formatPrice, type Product } from "@/lib/catalog";
 
 export function ProductCard({ product }: { product: Product }) {
+  const activeVariants = product.variants.filter((v) => v.price > 0);
+  const minVariantPrice = activeVariants.length > 0 ? Math.min(...activeVariants.map((v) => v.price)) : null;
+
   return (
     <Card className="group h-full gap-0 overflow-hidden rounded-2xl border-[#dfdfda] bg-white py-0 shadow-none transition duration-200 hover:-translate-y-1 hover:border-[#bdbdb8] hover:shadow-[0_16px_32px_rgba(29,29,27,0.08)]">
       <Link href={`/products/${product.slug}`} aria-label={`View ${product.name}`} className="block"><ProductArt product={product} /></Link>
@@ -17,7 +20,16 @@ export function ProductCard({ product }: { product: Product }) {
           <p className="mt-2 line-clamp-2 text-xs leading-5 text-[#777773] sm:text-sm sm:leading-6">{product.description}</p>
         </Link>
         <div className="mt-auto flex items-center justify-between gap-2 pt-5">
-          <span className="min-w-0 truncate text-sm font-semibold tracking-[-0.02em] text-[#171716] sm:text-base">{formatPrice(product.price)}</span>
+          <div className="min-w-0 truncate">
+            {minVariantPrice !== null ? (
+              <span className="text-sm font-semibold tracking-[-0.02em] text-[#171716] sm:text-base">
+                <span className="text-xs font-normal text-[#858580]">from </span>
+                {formatPrice(minVariantPrice)}
+              </span>
+            ) : (
+              <span className="text-sm font-semibold tracking-[-0.02em] text-[#171716] sm:text-base">{formatPrice(product.price)}</span>
+            )}
+          </div>
           <ProductCardActions product={product} />
         </div>
       </div>

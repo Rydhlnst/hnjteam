@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { Check, Download, FileText, MessageCircle } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -5,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ProductArt } from "@/components/site/product-art";
 import { WhatsAppButton } from "@/components/site/whatsapp-button";
-import { formatPrice, type Product } from "@/lib/catalog";
+import { formatPrice, type Product, type ProductVariant } from "@/lib/catalog";
 import type { WhatsAppSettings } from "@/lib/whatsapp";
 
 const highlights = [
@@ -15,6 +18,10 @@ const highlights = [
 ];
 
 export function ProductDetailCard({ product, settings }: { product: Product; settings?: WhatsAppSettings }) {
+  const activeVariants = product.variants.filter((v) => v.price > 0);
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | undefined>(activeVariants[0]);
+  const displayPrice = selectedVariant ? selectedVariant.price : product.price;
+
   return (
     <Card className="gap-0 overflow-hidden rounded-3xl border-[#dfdfda] bg-white py-0 shadow-[0_20px_60px_rgba(29,29,27,0.06)]">
       <div className="grid lg:grid-cols-[1.02fr_0.98fr]">
@@ -26,8 +33,36 @@ export function ProductDetailCard({ product, settings }: { product: Product; set
           <Badge className="border-[#e1e1dc] bg-[#f7f7f5] text-[#686864]">{product.categoryLabel}</Badge>
           <h1 className="mt-5 max-w-xl text-[clamp(2.5rem,5vw,4.5rem)] font-semibold leading-[0.92] tracking-[-0.085em] text-[#171716]">{product.name}</h1>
           <p className="mt-5 max-w-xl text-sm leading-6 text-[#6c6c68] sm:text-base sm:leading-7">{product.description}</p>
-          <div className="mt-7 flex flex-wrap items-baseline gap-x-3 gap-y-1"><span className="text-2xl font-semibold tracking-[-0.04em] text-[#171716]">{formatPrice(product.price)}</span><span className="text-sm text-[#858580]">one-time purchase</span></div>
-          <WhatsAppButton product={product} settings={settings} label="Order via WhatsApp" size="lg" className="mt-7 w-full" />
+
+          {activeVariants.length > 0 && (
+            <div className="mt-7">
+              <p className="text-xs font-medium text-[#858580] uppercase tracking-[0.12em]">Choose a package</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {activeVariants.map((v) => (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => setSelectedVariant(v)}
+                    className={[
+                      "rounded-xl border px-4 py-2 text-sm font-medium transition",
+                      selectedVariant?.id === v.id
+                        ? "border-[#171716] bg-[#171716] text-white"
+                        : "border-[#deded9] bg-white text-[#31312f] hover:border-[#171716]",
+                    ].join(" ")}
+                  >
+                    {v.quantity} {v.unitTypeName}
+                    <span className="ml-2 text-xs opacity-70">{formatPrice(v.price)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="mt-7 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <span className="text-2xl font-semibold tracking-[-0.04em] text-[#171716]">{formatPrice(displayPrice)}</span>
+            <span className="text-sm text-[#858580]">{selectedVariant ? `${selectedVariant.quantity} ${selectedVariant.unitTypeName}` : "one-time purchase"}</span>
+          </div>
+          <WhatsAppButton product={product} settings={settings} variant_={selectedVariant} label="Order via WhatsApp" size="lg" className="mt-7 w-full" />
           <p className="mt-3 text-center text-xs leading-5 text-[#858580]">No checkout here. We&apos;ll confirm the details with you first.</p>
           <Separator className="my-7" />
           <div className="grid gap-5 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">{highlights.map(({ label, value, icon: Icon }) => <div key={label} className="flex items-start gap-3"><span className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#f1f1ee] text-[#5f5f5b]"><Icon className="size-4" /></span><div><p className="text-xs text-[#999995]">{label}</p><p className="mt-1 text-sm font-medium leading-5 text-[#171716]">{value}</p></div></div>)}</div>
@@ -37,5 +72,3 @@ export function ProductDetailCard({ product, settings }: { product: Product; set
     </Card>
   );
 }
-
-

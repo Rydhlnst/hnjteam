@@ -1,3 +1,13 @@
+export type ProductVariant = {
+  id: string;
+  quantity: number;
+  unitTypeId: string;
+  unitTypeName: string;
+  unitTypeSlug: string;
+  price: number;
+  sortOrder: number;
+};
+
 export type Product = {
   id: string;
   slug: string;
@@ -9,6 +19,7 @@ export type Product = {
   featured: boolean;
   format: string;
   imageUrl?: string;
+  variants: ProductVariant[];
   art: {
     background: string;
     foreground: string;
@@ -36,6 +47,7 @@ export const products: Product[] = [
     price: 79000,
     featured: true,
     format: "Figma + PDF",
+    variants: [],
     art: {
       background: "#e7e2d7",
       foreground: "#263329",
@@ -53,6 +65,7 @@ export const products: Product[] = [
     price: 99000,
     featured: true,
     format: "Keynote + PPTX",
+    variants: [],
     art: {
       background: "#e2d8fa",
       foreground: "#302653",
@@ -70,6 +83,7 @@ export const products: Product[] = [
     price: 59000,
     featured: true,
     format: "Canva + PNG",
+    variants: [],
     art: {
       background: "#f8dfd3",
       foreground: "#6e2f26",
@@ -87,6 +101,7 @@ export const products: Product[] = [
     price: 39000,
     featured: true,
     format: "Sheets + Docs",
+    variants: [],
     art: {
       background: "#d7ece7",
       foreground: "#194943",
@@ -104,6 +119,7 @@ export const products: Product[] = [
     price: 69000,
     featured: false,
     format: "Notion + PDF",
+    variants: [],
     art: {
       background: "#f2e5bd",
       foreground: "#62480f",
@@ -121,6 +137,7 @@ export const products: Product[] = [
     price: 89000,
     featured: false,
     format: "Notion template",
+    variants: [],
     art: {
       background: "#dedfe2",
       foreground: "#34373c",
@@ -164,5 +181,3 @@ export function getWhatsAppHref(product?: Product) {
 
   return `https://wa.me/628123456789?text=${encodeURIComponent(message)}`;
 }
-
-

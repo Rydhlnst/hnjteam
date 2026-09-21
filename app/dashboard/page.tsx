@@ -1,19 +1,22 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { ArrowUpRight, LogOut, Megaphone, Menu, Package, Settings2 } from "lucide-react";
+import { ArrowUpRight, LogOut, Megaphone, Menu, Package, Settings2, UserCog } from "lucide-react";
 
 import { signOutDashboard } from "@/app/dashboard/actions";
+import { AccountSection } from "@/app/dashboard/_components/account-section";
 import { CatalogSection } from "@/app/dashboard/_components/catalog-section";
 import { DashboardLoginForm } from "@/app/dashboard/_components/dashboard-login-form";
+import { SetupAdminForm } from "@/app/dashboard/_components/setup-admin-form";
 import { StorefrontSettingsForm } from "@/app/dashboard/_components/storefront-settings-form";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { hasDashboardCredentials, isDashboardAuthenticated } from "@/lib/dashboard-auth";
-import { getDashboardCategories, getDashboardProducts, getPublicSettings } from "@/lib/catalog-db";
+import { hasAdminUser, isDashboardAuthenticated } from "@/lib/dashboard-auth";
+import { getDashboardCategories, getDashboardProducts, getDashboardUnitTypes, getPublicSettings } from "@/lib/catalog-db";
 import { hasDatabaseConfig, isPreviewMode } from "@/lib/env";
 
 const NAV = [
   { tab: "storefront", label: "Storefront", icon: Megaphone },
   { tab: "catalog", label: "Catalog", icon: Package },
+  { tab: "account", label: "Account", icon: UserCog },
 ] as const;
 
 type Tab = (typeof NAV)[number]["tab"];
@@ -25,7 +28,11 @@ const TAB_META: Record<Tab, { title: string; description: string }> = {
   },
   catalog: {
     title: "Catalog",
-    description: "Products and categories available in your storefront.",
+    description: "Products, categories, and unit types available in your storefront.",
+  },
+  account: {
+    title: "Account",
+    description: "Change your admin password.",
   },
 };
 
@@ -33,7 +40,7 @@ function SetupCard({ title, children }: { title: string; children: React.ReactNo
   return (
     <div className="flex min-h-screen w-screen items-center justify-center bg-[#f7f7f5] px-4">
       <div className="w-full max-w-md rounded-3xl border border-[#deded9] bg-white p-6 shadow-sm sm:p-8">
-        <div className="flex size-11 items-center justify-center rounded-2xl bg-[#171716] text-white">
+        <div className="flex size-11 items-center justify-center rounded-2xl bg-[var(--brand,#171716)] text-white">
           <Settings2 className="size-5" />
         </div>
         <p className="mt-7 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#858580]">HnJ dashboard</p>
@@ -97,7 +104,7 @@ function SidebarContent({ activeTab, preview }: { activeTab: Tab; preview: boole
 
 function Sidebar({ activeTab, preview }: { activeTab: Tab; preview: boolean }) {
   return (
-    <aside className="hidden md:flex w-56 shrink-0 flex-col border-r border-[#232320] bg-[#171716] text-white">
+    <aside className="hidden md:flex w-56 shrink-0 flex-col border-r border-[#232320] bg-[var(--brand,#171716)] text-white">
       <SidebarContent activeTab={activeTab} preview={preview} />
     </aside>
   );
@@ -111,7 +118,7 @@ function MobileSidebar({ activeTab, preview }: { activeTab: Tab; preview: boolea
           <Menu className="size-5" />
         </button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-56 border-r border-[#232320] bg-[#171716] p-0 text-white [&>button]:text-[#858580] [&>button]:hover:text-white">
+      <SheetContent side="left" className="w-56 border-r border-[#232320] bg-[var(--brand,#171716)] p-0 text-white [&>button]:text-[#858580] [&>button]:hover:text-white">
         <SidebarContent activeTab={activeTab} preview={preview} />
       </SheetContent>
     </Sheet>
@@ -135,12 +142,13 @@ export default async function DashboardPage({
     );
   }
 
-  if (!preview && !hasDashboardCredentials()) {
+  if (!preview && !(await hasAdminUser())) {
     return (
-      <SetupCard title="Secure the dashboard">
+      <SetupCard title="Create admin account">
         <p className="mt-4 text-sm leading-6 text-[#6c6c68]">
-          Add DASHBOARD_PASSWORD and DASHBOARD_SESSION_SECRET to your environment before opening the editor.
+          Set up your username and password to secure the dashboard.
         </p>
+        <SetupAdminForm />
       </SetupCard>
     );
   }
@@ -149,7 +157,7 @@ export default async function DashboardPage({
     return (
       <SetupCard title="Sign in">
         <p className="mt-4 text-sm leading-6 text-[#6c6c68]">
-          Use the dashboard password configured for this store.
+          Enter your admin credentials to open the dashboard.
         </p>
         <DashboardLoginForm />
       </SetupCard>
@@ -159,10 +167,11 @@ export default async function DashboardPage({
   const { tab } = await searchParams;
   const activeTab: Tab = NAV.some((n) => n.tab === tab) ? (tab as Tab) : "storefront";
 
-  const [settings, products, categories] = await Promise.all([
+  const [settings, products, categories, unitTypes] = await Promise.all([
     getPublicSettings(),
     getDashboardProducts(),
     getDashboardCategories(),
+    getDashboardUnitTypes(),
   ]);
 
   const { title, description } = TAB_META[activeTab];
@@ -200,13 +209,18 @@ export default async function DashboardPage({
                   <li>Three switchable promotion banners and their CTAs.</li>
                   <li>Featured collection heading.</li>
                   <li>Every WhatsApp product and cart checkout link.</li>
+                  <li>Brand color across the storefront and dashboard.</li>
                 </ul>
               </aside>
             </div>
           )}
 
           {activeTab === "catalog" && (
-            <CatalogSection products={products} categories={categories} />
+            <CatalogSection products={products} categories={categories} unitTypes={unitTypes} />
+          )}
+
+          {activeTab === "account" && (
+            <AccountSection />
           )}
         </main>
       </div>

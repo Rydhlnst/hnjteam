@@ -48,11 +48,93 @@ export const settings = pgTable("settings", {
   promoThreeTitle: varchar("promo_three_title", { length: 120 }).notNull().default("Ask before you order."),
   promoThreeDescription: text("promo_three_description").notNull().default("We will help you choose the right product."),
   promoThreeCtaLabel: varchar("promo_three_cta_label", { length: 40 }).notNull().default("Talk to HnJ"),
+  brandColor: varchar("brand_color", { length: 9 }).notNull().default("#171716"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+// ── Unit Types (client-managed variant dimensions) ────────────────────────────
+
+export const unitTypes = pgTable("unit_types", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: varchar("name", { length: 60 }).notNull(),
+  slug: varchar("slug", { length: 80 }).notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  slugUnique: uniqueIndex("unit_types_slug_unique").on(table.slug),
+}));
+
+// ── Product Variants ──────────────────────────────────────────────────────────
+
+export const productVariants = pgTable("product_variants", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  productId: uuid("product_id").notNull().references(() => products.id, { onDelete: "cascade" }),
+  quantity: integer("quantity").notNull(),
+  unitTypeId: uuid("unit_type_id").notNull().references(() => unitTypes.id, { onDelete: "restrict" }),
+  price: integer("price").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  productIndex: index("product_variants_product_id_idx").on(table.productId),
+}));
+
+// ── better-auth Tables ────────────────────────────────────────────────────────
+
+export const authUser = pgTable("auth_user", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  emailVerified: boolean("email_verified").notNull(),
+  image: text("image"),
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at").notNull(),
+  username: text("username").unique(),
+  displayUsername: text("display_username"),
+});
+
+export const authSession = pgTable("auth_session", {
+  id: text("id").primaryKey(),
+  expiresAt: timestamp("expires_at").notNull(),
+  token: text("token").notNull().unique(),
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at").notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  userId: text("user_id").notNull().references(() => authUser.id, { onDelete: "cascade" }),
+});
+
+export const authAccount = pgTable("auth_account", {
+  id: text("id").primaryKey(),
+  accountId: text("account_id").notNull(),
+  providerId: text("provider_id").notNull(),
+  userId: text("user_id").notNull().references(() => authUser.id, { onDelete: "cascade" }),
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  idToken: text("id_token"),
+  accessTokenExpiresAt: timestamp("access_token_expires_at"),
+  refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+  scope: text("scope"),
+  password: text("password"),
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at").notNull(),
+});
+
+export const authVerification = pgTable("auth_verification", {
+  id: text("id").primaryKey(),
+  identifier: text("identifier").notNull(),
+  value: text("value").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at"),
+  updatedAt: timestamp("updated_at"),
+});
+
+// ── Inferred types ────────────────────────────────────────────────────────────
 
 export type Category = typeof categories.$inferSelect;
 export type NewCategory = typeof categories.$inferInsert;
 export type Product = typeof products.$inferSelect;
 export type NewProduct = typeof products.$inferInsert;
 export type Settings = typeof settings.$inferSelect;
+export type UnitType = typeof unitTypes.$inferSelect;
+export type ProductVariantRow = typeof productVariants.$inferSelect;

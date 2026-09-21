@@ -15,6 +15,7 @@ export type StorefrontSettings = {
   promoThreeCtaLabel: string;
   collectionEyebrow: string;
   collectionTitle: string;
+  brandColor: string;
 };
 
 export type PublicSettings = WhatsAppSettings & StorefrontSettings;
@@ -34,6 +35,7 @@ export const defaultStorefrontSettings: StorefrontSettings = {
   promoThreeCtaLabel: "Talk to HnJ",
   collectionEyebrow: "Featured collection",
   collectionTitle: "Shop HnJ",
+  brandColor: "#171716",
 };
 
 export const defaultPublicSettings: PublicSettings = {

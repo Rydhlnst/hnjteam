@@ -5,14 +5,16 @@ import { Layers, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { CategorySheet } from "@/app/dashboard/_components/category-sheet";
 import { ProductSheet } from "@/app/dashboard/_components/product-sheet";
-import { deleteCategory, deleteProduct } from "@/app/dashboard/catalog-actions";
+import { UnitTypeSheet } from "@/app/dashboard/_components/unit-type-sheet";
+import { deleteCategory, deleteProduct, deleteUnitType } from "@/app/dashboard/catalog-actions";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/catalog";
-import type { DashboardCategory, DashboardProduct } from "@/lib/catalog-db";
+import type { DashboardCategory, DashboardProduct, DashboardUnitType } from "@/lib/catalog-db";
 
 type Props = {
   products: DashboardProduct[];
   categories: DashboardCategory[];
+  unitTypes: DashboardUnitType[];
 };
 
 function ArtBadge({ art, label }: { art: DashboardProduct["art"]; label?: string }) {
@@ -26,11 +28,13 @@ function ArtBadge({ art, label }: { art: DashboardProduct["art"]; label?: string
   );
 }
 
-export function CatalogSection({ products: initialProducts, categories: initialCategories }: Props) {
+export function CatalogSection({ products: initialProducts, categories: initialCategories, unitTypes: initialUnitTypes }: Props) {
   const [productSheetOpen, setProductSheetOpen] = useState(false);
   const [categorySheetOpen, setCategorySheetOpen] = useState(false);
+  const [unitTypeSheetOpen, setUnitTypeSheetOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<DashboardProduct | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<DashboardCategory | null>(null);
+  const [selectedUnitType, setSelectedUnitType] = useState<DashboardUnitType | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
@@ -38,6 +42,8 @@ export function CatalogSection({ products: initialProducts, categories: initialC
   const openEditProduct = (p: DashboardProduct) => { setSelectedProduct(p); setProductSheetOpen(true); };
   const openNewCategory = () => { setSelectedCategory(null); setCategorySheetOpen(true); };
   const openEditCategory = (c: DashboardCategory) => { setSelectedCategory(c); setCategorySheetOpen(true); };
+  const openNewUnitType = () => { setSelectedUnitType(null); setUnitTypeSheetOpen(true); };
+  const openEditUnitType = (u: DashboardUnitType) => { setSelectedUnitType(u); setUnitTypeSheetOpen(true); };
 
   const handleDeleteProduct = (id: string) => {
     if (!confirm("Delete this product? This cannot be undone.")) return;
@@ -51,6 +57,11 @@ export function CatalogSection({ products: initialProducts, categories: initialC
   const handleDeleteCategory = (id: string, name: string) => {
     if (!confirm(`Delete category "${name}"? This will fail if products still use it.`)) return;
     startTransition(async () => { await deleteCategory(id); });
+  };
+
+  const handleDeleteUnitType = (id: string, name: string) => {
+    if (!confirm(`Delete unit type "${name}"? This will fail if product variants still use it.`)) return;
+    startTransition(async () => { await deleteUnitType(id); });
   };
 
   return (
@@ -94,13 +105,15 @@ export function CatalogSection({ products: initialProducts, categories: initialC
                       )}
                       <div>
                         <p className="font-medium text-[#171716]">{product.name}</p>
-                        <p className="text-xs text-[#858580]">{product.format}</p>
+                        <p className="text-xs text-[#858580]">{product.variants.length > 0 ? `${product.variants.length} variant${product.variants.length !== 1 ? "s" : ""}` : product.format}</p>
                       </div>
                     </div>
                   </td>
                   <td className="hidden px-5 py-3.5 text-[#5f5f5b] sm:table-cell">{product.categoryLabel}</td>
                   <td className="hidden px-5 py-3.5 text-right font-medium tabular-nums text-[#171716] md:table-cell">
-                    {formatPrice(product.price)}
+                    {product.variants.length > 0
+                      ? `from ${formatPrice(Math.min(...product.variants.map((v) => v.price)))}`
+                      : formatPrice(product.price)}
                   </td>
                   <td className="px-5 py-3.5 text-center">
                     <div className="flex justify-center gap-1.5">
@@ -199,22 +212,56 @@ export function CatalogSection({ products: initialProducts, categories: initialC
                     <td className="px-5 py-3.5 font-mono text-xs text-[#858580]">{cat.slug}</td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center justify-end gap-1">
-                        <button
-                          type="button"
-                          onClick={() => openEditCategory(cat)}
-                          className="flex size-8 items-center justify-center rounded-lg text-[#858580] transition hover:bg-[#f0f0ec] hover:text-[#171716]"
-                          title="Edit"
-                        >
-                          <Pencil className="size-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteCategory(cat.id, cat.name)}
-                          className="flex size-8 items-center justify-center rounded-lg text-[#858580] transition hover:bg-red-50 hover:text-red-600"
-                          title="Delete"
-                        >
-                          <Trash2 className="size-3.5" />
-                        </button>
+                        <button type="button" onClick={() => openEditCategory(cat)} className="flex size-8 items-center justify-center rounded-lg text-[#858580] transition hover:bg-[#f0f0ec] hover:text-[#171716]" title="Edit"><Pencil className="size-3.5" /></button>
+                        <button type="button" onClick={() => handleDeleteCategory(cat.id, cat.name)} className="flex size-8 items-center justify-center rounded-lg text-[#858580] transition hover:bg-red-50 hover:text-red-600" title="Delete"><Trash2 className="size-3.5" /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
+      {/* ── Unit Types ───────────────────────────────────────── */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-semibold tracking-[-0.04em] text-[#171716]">Unit types</h2>
+            <p className="text-sm text-[#858580]">Used in product variants — e.g. &quot;Bulan&quot;, &quot;Tahun&quot;, &quot;Sesi&quot;.</p>
+          </div>
+          <Button size="sm" variant="outline" onClick={openNewUnitType} className="gap-1.5">
+            <Plus className="size-4" /> Add unit type
+          </Button>
+        </div>
+
+        <div className="overflow-hidden rounded-3xl border border-[#deded9] bg-white">
+          {initialUnitTypes.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-12 text-center">
+              <p className="text-sm text-[#858580]">No unit types yet. Add one to enable product variants.</p>
+              <Button size="sm" variant="outline" onClick={openNewUnitType} className="gap-1.5">
+                <Plus className="size-4" /> Add unit type
+              </Button>
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#e1e1dc] bg-[#fafaf8]">
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.15em] text-[#858580]">Name</th>
+                  <th className="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.15em] text-[#858580]">Slug</th>
+                  <th className="px-5 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.15em] text-[#858580]">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#f0f0ec]">
+                {initialUnitTypes.map((ut) => (
+                  <tr key={ut.id} className="transition-colors hover:bg-[#fafaf8]">
+                    <td className="px-5 py-3.5 font-medium text-[#171716]">{ut.name}</td>
+                    <td className="px-5 py-3.5 font-mono text-xs text-[#858580]">{ut.slug}</td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center justify-end gap-1">
+                        <button type="button" onClick={() => openEditUnitType(ut)} className="flex size-8 items-center justify-center rounded-lg text-[#858580] transition hover:bg-[#f0f0ec] hover:text-[#171716]" title="Edit"><Pencil className="size-3.5" /></button>
+                        <button type="button" onClick={() => handleDeleteUnitType(ut.id, ut.name)} className="flex size-8 items-center justify-center rounded-lg text-[#858580] transition hover:bg-red-50 hover:text-red-600" title="Delete"><Trash2 className="size-3.5" /></button>
                       </div>
                     </td>
                   </tr>
@@ -231,11 +278,17 @@ export function CatalogSection({ products: initialProducts, categories: initialC
         onOpenChange={setProductSheetOpen}
         product={selectedProduct}
         categories={initialCategories}
+        unitTypes={initialUnitTypes}
       />
       <CategorySheet
         open={categorySheetOpen}
         onOpenChange={setCategorySheetOpen}
         category={selectedCategory}
+      />
+      <UnitTypeSheet
+        open={unitTypeSheetOpen}
+        onOpenChange={setUnitTypeSheetOpen}
+        unitType={selectedUnitType}
       />
     </div>
   );

@@ -36,7 +36,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
 
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-      <body>
+      <body style={{ "--brand": settings.brandColor } as React.CSSProperties}>
         <CartProvider settings={settings}>
           {children}
           <StorefrontOverlays />

@@ -2,12 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 
 import type { DashboardFormState } from "@/app/dashboard/_components/form-state";
 import { settings } from "@/db/schema";
-import { clearDashboardSession, createDashboardSession, requireDashboardAuthentication } from "@/lib/dashboard-auth";
+import { getAuth } from "@/lib/auth";
+import { requireDashboardAuthentication } from "@/lib/dashboard-auth";
 import { getDb } from "@/lib/db";
 import { hasDatabaseConfig, isPreviewMode } from "@/lib/env";
 
@@ -32,23 +34,15 @@ const storefrontSettingsSchema = z.object({
   collectionTitle: z.string().trim().min(2).max(80),
   whatsappNumber: z.string().trim().regex(/^\d{8,20}$/, "Use a WhatsApp number with digits only."),
   whatsappMessageTemplate: z.string().trim().min(12).max(500),
+  brandColor: z.string().trim().regex(/^#[0-9a-fA-F]{3,8}$/, "Enter a valid hex color.").default("#171716"),
 });
 
 function parseFormData(formData: FormData) {
   return storefrontSettingsSchema.safeParse(Object.fromEntries(formData));
 }
 
-export async function signInDashboard(_: DashboardFormState, formData: FormData): Promise<DashboardFormState> {
-  const password = formData.get("password");
-  if (typeof password !== "string" || !(await createDashboardSession(password))) {
-    return { status: "error", message: "Incorrect password or dashboard credentials are not configured." };
-  }
-
-  redirect("/dashboard");
-}
-
 export async function signOutDashboard() {
-  await clearDashboardSession();
+  await getAuth().api.signOut({ headers: await headers() });
   redirect("/dashboard");
 }
 

@@ -1,68 +1,23 @@
 import "server-only";
 
-import { createHmac, timingSafeEqual } from "node:crypto";
-import { cookies } from "next/headers";
+import { headers } from "next/headers";
 
-const DASHBOARD_COOKIE = "hnj_dashboard_session";
-const SESSION_MAX_AGE = 60 * 60 * 12;
-
-function getCredentials() {
-  const password = process.env.DASHBOARD_PASSWORD;
-  const sessionSecret = process.env.DASHBOARD_SESSION_SECRET;
-
-  if (!password || !sessionSecret) return null;
-  return { password, sessionSecret };
-}
-
-function isEqual(left: string, right: string) {
-  const leftBuffer = Buffer.from(left);
-  const rightBuffer = Buffer.from(right);
-  return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer);
-}
-
-function getSessionValue() {
-  const credentials = getCredentials();
-  if (!credentials) return null;
-
-  return createHmac("sha256", credentials.sessionSecret)
-    .update(credentials.password)
-    .digest("base64url");
-}
-
-export function hasDashboardCredentials() {
-  return Boolean(getCredentials());
-}
+import { authUser } from "@/db/schema";
+import { getAuth } from "@/lib/auth";
+import { getDb } from "@/lib/db";
 
 export async function isDashboardAuthenticated() {
-  const expectedSession = getSessionValue();
-  if (!expectedSession) return false;
-
-  const cookieStore = await cookies();
-  const currentSession = cookieStore.get(DASHBOARD_COOKIE)?.value;
-  return Boolean(currentSession && isEqual(currentSession, expectedSession));
+  const session = await getAuth().api.getSession({ headers: await headers() });
+  return Boolean(session?.user);
 }
 
 export async function requireDashboardAuthentication() {
-  if (!(await isDashboardAuthenticated())) throw new Error("Unauthorized dashboard action");
+  const session = await getAuth().api.getSession({ headers: await headers() });
+  if (!session?.user) throw new Error("Unauthorized dashboard action");
+  return session.user;
 }
 
-export async function createDashboardSession(password: string) {
-  const credentials = getCredentials();
-  const sessionValue = getSessionValue();
-  if (!credentials || !sessionValue || !isEqual(password, credentials.password)) return false;
-
-  const cookieStore = await cookies();
-  cookieStore.set(DASHBOARD_COOKIE, sessionValue, {
-    httpOnly: true,
-    maxAge: SESSION_MAX_AGE,
-    path: "/dashboard",
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-  });
-  return true;
-}
-
-export async function clearDashboardSession() {
-  const cookieStore = await cookies();
-  cookieStore.delete(DASHBOARD_COOKIE);
+export async function hasAdminUser(): Promise<boolean> {
+  const [row] = await getDb().select({ id: authUser.id }).from(authUser).limit(1);
+  return Boolean(row);
 }

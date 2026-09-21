@@ -11,8 +11,13 @@ export function ProductCardActions({ product }: { product: Product }) {
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
 
+  const activeVariants = product.variants.filter((v) => v.price > 0);
+  const cheapestVariant = activeVariants.length > 0
+    ? activeVariants.reduce((min, v) => v.price < min.price ? v : min)
+    : undefined;
+
   function handleAdd() {
-    addItem(product);
+    addItem(product, cheapestVariant);
     setAdded(true);
     window.setTimeout(() => setAdded(false), 1400);
   }
