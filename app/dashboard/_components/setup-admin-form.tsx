@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { UserPlus } from "lucide-react";
 
 import { authClient } from "@/lib/auth-client";
@@ -9,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export function SetupAdminForm() {
-  const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -44,7 +42,7 @@ export function SetupAdminForm() {
         setError(signInResult.error.message ?? "Sign in after setup failed.");
         return;
       }
-      router.refresh();
+      window.location.href = "/dashboard";
     } catch {
       setError("Setup failed. Please try again.");
     } finally {

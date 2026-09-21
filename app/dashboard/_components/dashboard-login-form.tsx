@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { LockKeyhole, User } from "lucide-react";
 
 import { authClient } from "@/lib/auth-client";
@@ -9,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export function DashboardLoginForm() {
-  const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -24,7 +22,7 @@ export function DashboardLoginForm() {
       if (result.error) {
         setError(result.error.message ?? "Incorrect username or password.");
       } else {
-        router.refresh();
+        window.location.href = "/dashboard";
       }
     } catch {
       setError("Sign in failed. Please try again.");
