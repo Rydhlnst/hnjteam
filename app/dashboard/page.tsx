@@ -15,6 +15,8 @@ import { getDashboardCategories, getDashboardProducts, getDashboardUnitTypes, ge
 import { getPublicAssetUrl } from "@/lib/r2";
 import { hasDatabaseConfig, isPreviewMode } from "@/lib/env";
 
+export const dynamic = "force-dynamic";
+
 const NAV = [
   { tab: "storefront", label: "Storefront", icon: Megaphone },
   { tab: "catalog", label: "Catalog", icon: Package },
