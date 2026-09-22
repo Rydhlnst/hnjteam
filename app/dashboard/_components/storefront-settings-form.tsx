@@ -3,7 +3,6 @@
 import { startTransition, useActionState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { Check, Save } from "lucide-react";
-import { z } from "zod";
 
 import { updateStorefrontSettings } from "@/app/dashboard/actions";
 import { dashboardInitialState } from "@/app/dashboard/_components/form-state";
@@ -22,25 +21,6 @@ const BRAND_PRESETS = [
   { color: "#2a2520", label: "Walnut" },
 ];
 
-const dashboardSettingsSchema = z.object({
-  heroEyebrow: z.string().trim().min(2).max(80),
-  heroTitle: z.string().trim().min(5).max(120),
-  heroDescription: z.string().trim().min(10).max(360),
-  heroCtaLabel: z.string().trim().min(2).max(40),
-  promoTwoEyebrow: z.string().trim().min(2).max(80),
-  promoTwoTitle: z.string().trim().min(5).max(120),
-  promoTwoDescription: z.string().trim().min(10).max(360),
-  promoTwoCtaLabel: z.string().trim().min(2).max(40),
-  promoThreeEyebrow: z.string().trim().min(2).max(80),
-  promoThreeTitle: z.string().trim().min(5).max(120),
-  promoThreeDescription: z.string().trim().min(10).max(360),
-  promoThreeCtaLabel: z.string().trim().min(2).max(40),
-  collectionEyebrow: z.string().trim().min(2).max(80),
-  collectionTitle: z.string().trim().min(2).max(80),
-  whatsappNumber: z.string().trim().regex(/^\d{8,20}$/),
-  whatsappMessageTemplate: z.string().trim().min(12).max(500),
-  brandColor: z.string().trim().regex(/^#[0-9a-fA-F]{3,8}$/).default("#171716"),
-});
 
 type StorefrontSettingsFormProps = { initialSettings: PublicSettings };
 
@@ -56,8 +36,7 @@ export function StorefrontSettingsForm({ initialSettings }: StorefrontSettingsFo
   const [state, formAction, pending] = useActionState(updateStorefrontSettings, dashboardInitialState);
   const form = useForm({
     defaultValues: initialSettings,
-    validators: { onSubmit: ({ value }) => { const result = dashboardSettingsSchema.safeParse(value); return result.success ? undefined : result.error.flatten().fieldErrors; } },
-    onSubmit: ({ value }) => { const formData = new FormData(); for (const [name, fieldValue] of Object.entries(value)) formData.set(name, String(fieldValue)); startTransition(() => formAction(formData)); },
+    onSubmit: ({ value }) => { const formData = new FormData(); for (const [name, fieldValue] of Object.entries(value)) formData.set(name, String(fieldValue ?? "")); startTransition(() => formAction(formData)); },
   });
 
   return (
