@@ -9,6 +9,7 @@ import { dashboardInitialState } from "@/app/dashboard/_components/form-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { PublicSettings } from "@/lib/storefront";
+import { defaultWhatsAppSettings } from "@/lib/whatsapp";
 
 const BRAND_PRESETS = [
   { color: "#171716", label: "HnJ Black" },
@@ -35,7 +36,11 @@ function TextArea({ id, value, onChange, rows = 3 }: { id: string; value: string
 export function StorefrontSettingsForm({ initialSettings }: StorefrontSettingsFormProps) {
   const [state, formAction, pending] = useActionState(updateStorefrontSettings, dashboardInitialState);
   const form = useForm({
-    defaultValues: initialSettings,
+    defaultValues: {
+      ...initialSettings,
+      whatsappNumber: initialSettings.whatsappNumber || defaultWhatsAppSettings.whatsappNumber,
+      whatsappMessageTemplate: initialSettings.whatsappMessageTemplate || defaultWhatsAppSettings.whatsappMessageTemplate,
+    },
     onSubmit: ({ value }) => { const formData = new FormData(); for (const [name, fieldValue] of Object.entries(value)) formData.set(name, String(fieldValue ?? "")); startTransition(() => formAction(formData)); },
   });
 
