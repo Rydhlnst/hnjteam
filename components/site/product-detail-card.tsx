@@ -37,7 +37,7 @@ export function ProductDetailCard({ product, settings }: { product: Product; set
     <Card className="gap-0 overflow-hidden rounded-3xl border-[#dfdfda] bg-white py-0 shadow-[0_20px_60px_rgba(29,29,27,0.06)]">
       <div className="grid lg:grid-cols-[1.02fr_0.98fr]">
         <div className="border-b border-[#e1e1dc] bg-[#ededeb] p-3 sm:p-5 lg:border-b-0 lg:border-r">
-          <ProductArt product={product} className="h-[22rem] rounded-2xl sm:h-[28rem]" />
+          <ProductArt product={product} className="h-[22rem] rounded-2xl sm:h-[28rem]" priority />
           <div className="mt-3 flex items-center justify-between px-1 text-xs text-[#858580]"><span>Product preview</span><span>{product.format}</span></div>
         </div>
         <CardContent className="p-5 sm:p-8 lg:p-10">
