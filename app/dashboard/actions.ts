@@ -13,6 +13,7 @@ import { requireDashboardAuthentication } from "@/lib/dashboard-auth";
 import { getDb } from "@/lib/db";
 import { hasDatabaseConfig, isPreviewMode } from "@/lib/env";
 import { deleteProductImage, uploadBrandAsset } from "@/lib/r2";
+import { defaultWhatsAppSettings } from "@/lib/whatsapp";
 
 const promotionSchema = {
   heroEyebrow: z.string().trim().min(2).max(80),
@@ -59,7 +60,22 @@ export async function updateStorefrontSettings(_: DashboardFormState, formData: 
   if (!hasDatabaseConfig()) return { status: "error", message: "DATABASE_URL is required before settings can be saved." };
 
   const parsed = parseFormData(formData);
-  if (!parsed.success) return { status: "error", message: parsed.error.issues[0]?.message ?? "Check the highlighted settings." };
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    const field = issue?.path[0] ? String(issue.path[0]) : null;
+    const fieldLabel: Record<string, string> = {
+      whatsappNumber: "WhatsApp number",
+      whatsappMessageTemplate: "WhatsApp message template",
+      heroEyebrow: "Primary banner eyebrow",
+      heroTitle: "Primary banner headline",
+      heroDescription: "Primary banner description",
+      heroCtaLabel: "Primary banner CTA",
+      brandColor: "Brand color",
+    };
+    const label = field ? (fieldLabel[field] ?? field) : null;
+    const msg = issue?.message ?? "Check the highlighted settings.";
+    return { status: "error", message: label ? `${label}: ${msg}` : msg };
+  }
 
   const values = parsed.data;
   await getDb().insert(settings).values({ id: 1, ...values }).onConflictDoUpdate({
@@ -101,8 +117,18 @@ export async function updateBrandingAssets(_: DashboardFormState, formData: Form
   const logoKey = await handleAsset("logo", current?.logoKey, "brand/logo");
   const faviconKey = await handleAsset("favicon", current?.faviconKey, "brand/favicon");
 
-  await db.insert(settings).values({ id: 1, siteName: siteName.data, logoKey: logoKey ?? null, faviconKey: faviconKey ?? null, whatsappNumber: "", whatsappMessageTemplate: "" })
-    .onConflictDoUpdate({ target: settings.id, set: { siteName: siteName.data, logoKey: logoKey ?? null, faviconKey: faviconKey ?? null, updatedAt: new Date() }, where: eq(settings.id, 1) });
+  await db.insert(settings).values({
+    id: 1,
+    siteName: siteName.data,
+    logoKey: logoKey ?? null,
+    faviconKey: faviconKey ?? null,
+    whatsappNumber: defaultWhatsAppSettings.whatsappNumber,
+    whatsappMessageTemplate: defaultWhatsAppSettings.whatsappMessageTemplate,
+  }).onConflictDoUpdate({
+    target: settings.id,
+    set: { siteName: siteName.data, logoKey: logoKey ?? null, faviconKey: faviconKey ?? null, updatedAt: new Date() },
+    where: eq(settings.id, 1),
+  });
 
   revalidatePath("/", "layout");
   revalidatePath("/dashboard");

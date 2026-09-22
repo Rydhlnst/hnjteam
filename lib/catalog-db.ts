@@ -226,5 +226,12 @@ export async function getPublicSettings(): Promise<PublicSettings> {
     logoKey: settingsTable.logoKey,
     faviconKey: settingsTable.faviconKey,
   }).from(settingsTable).where(eq(settingsTable.id, 1)).limit(1);
-  return row ?? defaultPublicSettings;
+  if (!row) return defaultPublicSettings;
+  // Fall back to defaults for fields that were saved as empty strings
+  // (can happen if branding was saved before storefront settings were configured)
+  return {
+    ...row,
+    whatsappNumber: row.whatsappNumber || defaultPublicSettings.whatsappNumber,
+    whatsappMessageTemplate: row.whatsappMessageTemplate || defaultPublicSettings.whatsappMessageTemplate,
+  };
 }
